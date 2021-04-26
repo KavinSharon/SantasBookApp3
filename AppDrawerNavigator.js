@@ -5,6 +5,7 @@ import MyDonationsScreen from '../Screens/MyDonations'
 import SettingScreen from '../Screens/SettingScreen'
 import MyNotificationsScreen from '../Screens/notificationsScreen'
 import SideBarMenu from './SideBarMenu'
+import MyReceivedBookListScreen from '../Screens/MyReceivedBookListScreen'
 
 export const AppDrawerNavigator = createDrawerNavigator({
     Home: {
@@ -12,6 +13,9 @@ export const AppDrawerNavigator = createDrawerNavigator({
     },
     MyDonations:{
         screen:MyDonationsScreen
+    },
+    ReceivedBook:{
+        screen:MyReceivedBookListScreen
     },
     Notifications:{
         screen:MyNotificationsScreen

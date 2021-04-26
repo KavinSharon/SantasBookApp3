@@ -107,6 +107,7 @@ export default class MyDonationsScreen extends React.Component{
                 }]}
                 onPress = {()=>{
                     this.sendBook(item)
+                    
                 }}> 
                     <Text style={{color:'#ffff'}}>{
                         item.requestStatus === "Book Sent" ? "Book Sent" : "Send Book"

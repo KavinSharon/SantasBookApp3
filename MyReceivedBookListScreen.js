@@ -1,32 +1,36 @@
 import * as React from 'react';
 
-import { View,Text,StyleSheet,TouchableOpacity,TextInput,FlatList,} from 'react-native';
+import { View,Text,StyleSheet,TouchableOpacity,TextInput,Image,FlatList} from 'react-native';
+import {ListItem} from 'react-native-elements';
+import MyHeader from '../components/MyHeader'
 
-import {ListItem} from 'react-native-elements'
+import{Card} from 'react-native-elements'
 import db from '../config'
 import firebase from 'firebase'
-import MyHeader from '../components/MyHeader'
-export default class BookDonateScreen extends React.Component{
+export default class MyReceivedBookListScreen extends React.Component{
     constructor(){
         super()
         this.state = {
-            requestedBooksList:[]
+            userID:firebase.auth().currentUser.email,
+            receivedBookList:[],
+            donorName:'',
         }
-        this.requestRef = null
+        this.requestRef = null;
     }
 
-    getRequestBookList =()=>{
-        this.requestRef = db.collection("RequestedBooks")
+    getReceivedBookList = ()=>{
+        this.requestRef = db.collection("RequestedBooks").where('userID','==',this.state.userID)
+        .where('bookStatus','==',"Received")
         .onSnapshot((snapshot)=>{
-            var requestedBooksList = snapshot.docs.map(document => document.data())
+            var receivedBookList = snapshot.docs.map((doc)=>doc.data())
             this.setState({
-                requestedBooksList:requestedBooksList
+                receivedBookList:receivedBookList
             })
         })
     }
 
     componentDidMount(){
-        this.getRequestBookList()
+        this.getReceivedBookList()
     }
 
     componentWillUnmount(){
@@ -37,61 +41,45 @@ export default class BookDonateScreen extends React.Component{
     renderItem = ({item,i})=>{
         return(
             <ListItem 
-            key={i} bottomDivider>
-                <Image
-                style = {{height:50,width:50}}
-                source = {{uri:item.imageLink}}/> 
+            key={i} bottomDivider> 
                 <ListItem.Content> 
                     <ListItem.Title style = {{ color: 'black', fontWeight: 'bold' }}>{item.bookName} </ListItem.Title> 
-                    <ListItem.Subtitle>{item.reasonForRequest}</ListItem.Subtitle> 
-                </ListItem.Content> 
-                <TouchableOpacity 
-                style={styles.button}
-                onPress = {()=>{
-                    this.props.navigation.navigate('RecieverDetails',{'details':item})
-                }}> 
-                    <Text style={{color:'#ffff'}}>
-                        View
-                    </Text>
-                </TouchableOpacity> 
+                    <ListItem.Subtitle>{item.bookStatus}</ListItem.Subtitle> 
+                </ListItem.Content>  
             </ListItem>
 
         )
     }
-    
-
-
     render(){
         return(
             <View
             style = {{flex:1}}>
                 <MyHeader 
-                    title = "Donate Books"
+                    title = "Recieved Books"
                     navigation = {this.props.navigation}/>
                 <View
                 style = {{flex:1}}>
                     {
-                        this.state.requestedBooksList.length === 0 ? (
+                        this.state.receivedBookList.length === 0 ? (
                             <View 
                             style = {styles.container}>
                                 <Text
                                 style = {{fontSize:15}}>
-                                    List Of All Requested Books
+                                    List Of All Received Books
                                 </Text>
                             </View>
                         )
                         :(
                             <FlatList 
                             keyExtractor = {this.keyExtractor}
-                            data = {this.state.requestedBooksList}
+                            data = {this.state.receivedBookList}
                             renderItem = {this.renderItem}/>
                         )
                     }
                 </View>     
             </View>
         )
-    }
-
+    } 
 }
 
 const styles = StyleSheet.create({

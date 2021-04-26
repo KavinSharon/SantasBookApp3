@@ -1,10 +1,11 @@
 import * as React from 'react';
-
-import { View,Text,StyleSheet,TouchableOpacity,TextInput,Image, KeyboardAvoidingView,Alert,ToastAndroid,Modal,ScrollView} from 'react-native';
+import {BookSearch} from 'react-native-google-books'
+import { View,Text,StyleSheet,TouchableOpacity,TextInput,Image, KeyboardAvoidingView,Alert,TouchableHighlight, TouchableHighlightBase} from 'react-native';
 
 import db from '../config'
 import firebase from 'firebase'
 import MyHeader from '../components/MyHeader'
+import { FlatList } from 'react-native';
 export default class BookRequestScreen extends React.Component{
 
     constructor(){
@@ -19,8 +20,23 @@ export default class BookRequestScreen extends React.Component{
             docID:"",
             requestID:"",
             userDocID:"",
+            dataSource:"",
+            showFlatList:'',
 
          }
+    }
+
+    async getBooksFromApi(bookName){
+        this.setState({
+            bookName:bookName
+        })
+        if(bookName.length>2){
+            var books = await BookSearch.searchbook(bookName,'AIzaSyDN4KoWYpcU2tpk2dTWDMEROFbRG2n_zxU')
+            this.setState({
+                dataSource:books.data,
+                showFlatList:true,
+            })       
+        }
     }
 
     createUniqueID(){
@@ -30,12 +46,14 @@ export default class BookRequestScreen extends React.Component{
     addRequest = async (bookName,reasonForRequest)=>{
         var userID = this.state.userID
         var randomRequestID = this.createUniqueID()
+        var books = await BookSearch.searchbook(bookName,'AIzaSyDN4KoWYpcU2tpk2dTWDMEROFbRG2n_zxU')
         db.collection('RequestedBooks').add({
             "userID":userID,
             "bookName":bookName,
             "reasonForRequest":reasonForRequest,
             "requestID":randomRequestID,
-            "bookStatus":"Requested", 
+            "bookStatus":"Requested",
+            "imageLink":books.data[0].volumeInfo.imageLinks.smallThumbnail 
         })
         await this.getBookRequest()
         db.collection('UsersCollection').where('emailID','==',userID).get()
@@ -139,6 +157,26 @@ export default class BookRequestScreen extends React.Component{
 
     }
 
+    renderItem = ({item,i})=>{
+        return(
+            <TouchableHighlight
+            style = {{alignItems:'center',padding:10,width:'90%',backgroundColor:'gray'}}
+            activeOpacity = {0.6}
+            underlayColor = 'gray'
+            onPress = {()=>{
+                this.setState({
+                showFlatList:false,
+                bookName:item.volumeInfo.title,
+                })
+            }}
+            bottomDivider>
+                <Text>
+                    {item.volumeInfo.title}
+                </Text>
+            </TouchableHighlight>
+        )
+    }
+
     render(){
         if(this.state.isBookRequestActive === true){
             return(
@@ -188,36 +226,49 @@ export default class BookRequestScreen extends React.Component{
                         style = {styles.formsTextInput}
                         placeholder = {"Book Name"}
                         onChangeText = {(text)=>{
-                            this.setState({
-                                bookName:text,
-                            
-                            })
+                            this.getBooksFromApi(text)
+                        }}
+                        onClear = {(text)=>{
+                            this.getBooksFromApi("")
                         }}
                         value = {this.state.bookName}/>
-                    <TextInput
-                        style = {styles.formsTextInput}
-                        placeholder = {"Reason For Your Request"}
-                        multiline = {true}
-                        numberOfLines = {5}
-                        onChangeText = {(text)=>{
-                            this.setState({
-                                reasonForRequest:text,
-                                
-                            })
-                        }}
-                        value = {this.state.reasonForRequest}
+                        {this.state.showFlatList?(
+                            <FlatList
+                            data = {this.state.dataSource}
+                            renderItem = {this.renderItem}
+                            keyExtractor = {(item,index)=>index.toString()}
+                            style = {{marginTop:10,}}
+                            enableEmptySections = {true}/>
+                        ):
+                        (
+                            <View>
+                                <TextInput
+                                    style = {styles.formsTextInput}
+                                    placeholder = {"Reason For Your Request"}
+                                    multiline = {true}
+                                    numberOfLines = {5}
+                                    onChangeText = {(text)=>{
+                                        this.setState({
+                                            reasonForRequest:text,
+                                            
+                                        })
+                                    }}
+                                    value = {this.state.reasonForRequest}
 
-                    />
+                                />
                 
-                    <TouchableOpacity
-                        style = {styles.button}
-                        onPress = {()=>{
-                            this.addRequest(this.state.bookName,this.state.reasonForRequest)
-                        }}>
-                        <Text>
-                            Request
-                        </Text>
-                    </TouchableOpacity>
+                                <TouchableOpacity
+                                    style = {styles.button}
+                                    onPress = {()=>{
+                                        this.addRequest(this.state.bookName,this.state.reasonForRequest)
+                                    }}>
+                                    <Text>
+                                        Request
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                    
                 </KeyboardAvoidingView>
                     
                 </View>
